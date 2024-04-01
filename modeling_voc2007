@@ -1,0 +1,68 @@
+import os
+import numpy as np
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.losses import binary_crossentropy
+from tensorflow.keras.metrics import Accuracy
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+
+# Load and preprocess the images and labels
+data_dir = 'data/msrcorid/'
+images_list = []
+labels_list = []
+processed_files = set()
+
+# Counter for images added per folder
+images_added_per_folder = {}
+
+def process_folder(folder_path, label):
+    for file_name in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, file_name)
+        if os.path.isdir(file_path):
+            process_folder(file_path, label)  # Recursively process subdirectories
+        else:
+            # Check if file has already been processed
+            if file_path not in processed_files:
+                processed_files.add(file_path)  # Add file to processed set
+                try:
+                    img = image.load_img(file_path, target_size=(224, 224))
+                    img_array = image.img_to_array(img)
+                    images_list.append(img_array)
+                    labels_list.append(label)
+                    images_added_per_folder[os.path.dirname(file_path)] = images_added_per_folder.get(os.path.dirname(file_path), 0) + 1  # Increment counter
+                except Exception as e:
+                    print(f"Error loading image {file_path}: {e}")
+
+# Loop through top-level directories
+for folder_name in os.listdir(data_dir):
+    folder_path = os.path.join(data_dir, folder_name)
+    if os.path.isdir(folder_path):
+        if folder_name == 'cars':
+            label = 1
+        else:
+            label = 0
+
+        print(f"Processing directory: {folder_path}, Label: {label}")
+
+        # Process the folder
+        process_folder(folder_path, label)
+
+# Convert lists to arrays
+images = np.array(images_list)
+labels = np.array(labels_list)
+
+# Count number of cars and non-cars
+num_cars = np.sum(labels == 1)
+num_non_cars = np.sum(labels == 0)
+
+print("Number of labels with value 1 (cars):", num_cars)
+print("Number of labels with value 0 (non-cars):", num_non_cars)
+
+# Split the data into training and validation sets
+X_train, X_val, y_train, y_val = train_test_split(images, labels, test_size=0.2, random_state=42)
