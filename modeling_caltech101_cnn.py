@@ -32,6 +32,13 @@ for folder_name in os.listdir(data_dir):
 images = np.array(images)
 labels = np.array(labels)
 
+# Count number of cars and non-cars
+num_cars = np.sum(labels == 1)
+num_non_cars = np.sum(labels == 0)
+
+print("Number of labels with value 1 (cars):", num_cars)
+print("Number of labels with value 0 (non-cars):", num_non_cars)
+
 # Split the data into training and validation sets
 X_train, X_val, y_train, y_val = train_test_split(images, labels, test_size=0.2, random_state=42)
 
